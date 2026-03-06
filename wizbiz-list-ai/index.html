@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>営業リストAI | WizBiz</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #0a2a6e;
+      --primary-light: #1a4db8;
+      --accent: #2563eb;
+      --accent-light: #dbeafe;
+      --success: #059669;
+      --gray-50: #f8fafc;
+      --gray-100: #f1f5f9;
+      --gray-200: #e2e8f0;
+      --gray-400: #94a3b8;
+      --gray-600: #475569;
+      --gray-800: #1e293b;
+      --white: #ffffff;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Yu Gothic UI', sans-serif;
+      background: var(--gray-50);
+      color: var(--gray-800);
+      min-height: 100vh;
+    }
+
+    /* Header */
+    .header {
+      background: var(--primary);
+      padding: 0 24px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: white;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    .header-logo span {
+      color: #60a5fa;
+    }
+    .header-badge {
+      background: #60a5fa;
+      color: var(--primary);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+
+    /* Hero */
+    .hero {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      color: white;
+      padding: 48px 24px 40px;
+      text-align: center;
+    }
+    .hero h1 {
+      font-size: clamp(22px, 4vw, 32px);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+      line-height: 1.3;
+    }
+    .hero p {
+      font-size: 15px;
+      opacity: 0.85;
+      max-width: 480px;
+      margin: 0 auto 28px;
+      line-height: 1.6;
+    }
+
+    /* Stats bar */
+    .stats-bar {
+      display: flex;
+      justify-content: center;
+      gap: 0;
+      max-width: 480px;
+      margin: 0 auto;
+      background: rgba(255,255,255,0.1);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .stat {
+      flex: 1;
+      padding: 14px 16px;
+      text-align: center;
+    }
+    .stat + .stat {
+      border-left: 1px solid rgba(255,255,255,0.2);
+    }
+    .stat-label {
+      font-size: 11px;
+      opacity: 0.7;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .stat-value {
+      font-size: 22px;
+      font-weight: 800;
+    }
+    .stat-value.before { color: #fca5a5; text-decoration: line-through; opacity: 0.8; }
+    .stat-value.after { color: #86efac; }
+    .stat-arrow {
+      font-size: 20px;
+      opacity: 0.6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 8px;
+    }
+
+    /* Main content */
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 32px 16px;
+    }
+
+    /* Input card */
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 28px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+    }
+    .card-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--gray-400);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 16px;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 12px;
+      align-items: flex-end;
+    }
+    .input-wrap {
+      flex: 1;
+    }
+    .input-wrap label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--gray-600);
+      margin-bottom: 8px;
+    }
+    textarea {
+      width: 100%;
+      border: 1.5px solid var(--gray-200);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 14px;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 68px;
+      color: var(--gray-800);
+      transition: border-color 0.15s;
+      line-height: 1.5;
+    }
+    textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    textarea::placeholder { color: var(--gray-400); }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 14px 24px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      height: 68px;
+    }
+    .btn-primary:hover { background: #1d4ed8; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37,99,235,0.3); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-primary:disabled { background: var(--gray-400); cursor: not-allowed; transform: none; box-shadow: none; }
+
+    /* Chips */
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .chip {
+      background: var(--accent-light);
+      color: var(--accent);
+      border: none;
+      border-radius: 20px;
+      padding: 5px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+    .chip:hover { background: var(--accent); color: white; }
+
+    /* Loading */
+    .loading-card {
+      display: none;
+      background: white;
+      border-radius: 16px;
+      padding: 40px 28px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      text-align: center;
+    }
+    .loading-card.visible { display: block; }
+    .loading-bar-wrap {
+      background: var(--gray-100);
+      border-radius: 8px;
+      height: 6px;
+      overflow: hidden;
+      margin: 20px 0 12px;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .loading-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), #60a5fa);
+      border-radius: 8px;
+      animation: loading-anim 2.4s ease-in-out;
+    }
+    @keyframes loading-anim {
+      0% { width: 0%; }
+      40% { width: 60%; }
+      80% { width: 88%; }
+      100% { width: 100%; }
+    }
+    .loading-steps {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+    .loading-step {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--gray-400);
+    }
+    .loading-step.active { color: var(--accent); font-weight: 600; }
+    .loading-step.done { color: var(--success); }
+    .step-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    /* Results */
+    .results-card {
+      display: none;
+      background: white;
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+    }
+    .results-card.visible { display: block; }
+
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .results-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--gray-800);
+    }
+    .results-meta {
+      font-size: 13px;
+      color: var(--gray-400);
+      margin-top: 2px;
+    }
+    .results-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-secondary {
+      background: var(--gray-100);
+      color: var(--gray-600);
+      border: 1.5px solid var(--gray-200);
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.12s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-secondary:hover { background: white; border-color: var(--accent); color: var(--accent); }
+
+    .btn-success {
+      background: var(--success);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.12s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-success:hover { background: #047857; }
+
+    /* Table */
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 10px;
+      border: 1.5px solid var(--gray-200);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    thead {
+      background: var(--gray-50);
+    }
+    th {
+      padding: 11px 14px;
+      text-align: left;
+      font-weight: 700;
+      color: var(--gray-600);
+      border-bottom: 1.5px solid var(--gray-200);
+      white-space: nowrap;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--gray-100);
+      color: var(--gray-800);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--accent-light); }
+
+    .tag {
+      display: inline-block;
+      background: var(--accent-light);
+      color: var(--accent);
+      border-radius: 4px;
+      padding: 2px 7px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .score-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .score-fill {
+      height: 6px;
+      background: var(--accent);
+      border-radius: 3px;
+      transition: width 0.8s ease;
+    }
+    .score-bg {
+      width: 60px;
+      height: 6px;
+      background: var(--gray-200);
+      border-radius: 3px;
+    }
+
+    /* Footer note */
+    .footer-note {
+      text-align: center;
+      font-size: 12px;
+      color: var(--gray-400);
+      margin-top: 32px;
+      padding-bottom: 32px;
+    }
+
+    @media (max-width: 600px) {
+      .input-row { flex-direction: column; }
+      .btn-primary { width: 100%; height: auto; padding: 14px; justify-content: center; }
+      .stats-bar { flex-direction: column; }
+      .stat + .stat { border-left: none; border-top: 1px solid rgba(255,255,255,0.2); }
+      .stat-arrow { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-logo">
+    <span>WizBiz</span> 営業リストAI
+  </div>
+  <div class="header-badge">AI POWERED</div>
+</header>
+
+<section class="hero">
+  <h1>リスト作成、AIに任せてください。</h1>
+  <p>条件を入力するだけで、ターゲット企業リストを自動生成。<br>Excel出力まで、すべて数秒で完結。</p>
+  <div class="stats-bar">
+    <div class="stat">
+      <div class="stat-label">従来の手動作業</div>
+      <div class="stat-value before">30分</div>
+    </div>
+    <div class="stat-arrow">→</div>
+    <div class="stat">
+      <div class="stat-label">AIで自動生成</div>
+      <div class="stat-value after">約3秒</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">削減率</div>
+      <div class="stat-value" style="color:#fde68a">99%↓</div>
+    </div>
+  </div>
+</section>
+
+<div class="container">
+
+  <!-- Input -->
+  <div class="card">
+    <div class="card-title">リスト生成条件を入力</div>
+    <div class="input-row">
+      <div class="input-wrap">
+        <label for="query">ターゲット企業の条件</label>
+        <textarea id="query" placeholder="例：東京の製造業、従業員50名以上、代表者に直接アプローチできる企業"></textarea>
+      </div>
+      <button class="btn-primary" id="generateBtn" onclick="generateList()">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        AI生成
+      </button>
+    </div>
+    <div class="chips">
+      <span style="font-size:12px; color:var(--gray-400); padding:5px 0;">条件例：</span>
+      <button class="chip" onclick="setQuery('東京・神奈川の製造業、従業員50名以上')">東京・神奈川の製造業</button>
+      <button class="chip" onclick="setQuery('IT業界のスタートアップ、設立5年以内')">ITスタートアップ</button>
+      <button class="chip" onclick="setQuery('食品・飲料業界、売上10億円以上の中堅企業')">食品・飲料中堅</button>
+      <button class="chip" onclick="setQuery('建設・不動産、東京23区内に本社がある企業')">建設・不動産</button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-card" id="loadingCard">
+    <div style="font-size:14px; color:var(--gray-600); font-weight:600;">AIがリストを生成しています...</div>
+    <div class="loading-bar-wrap"><div class="loading-bar" id="loadingBar"></div></div>
+    <div class="loading-steps">
+      <div class="loading-step" id="step1"><div class="step-dot"></div>条件を解析中</div>
+      <div class="loading-step" id="step2"><div class="step-dot"></div>企業データベースを検索</div>
+      <div class="loading-step" id="step3"><div class="step-dot"></div>スコアリング・フィルタリング</div>
+      <div class="loading-step" id="step4"><div class="step-dot"></div>リスト整形・出力</div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="results-card" id="resultsCard">
+    <div class="results-header">
+      <div>
+        <div class="results-title" id="resultsTitle">生成結果</div>
+        <div class="results-meta" id="resultsMeta"></div>
+      </div>
+      <div class="results-actions">
+        <button class="btn-secondary" onclick="generateList()">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+          再生成
+        </button>
+        <button class="btn-success" onclick="downloadCSV()">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Excel出力
+        </button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table id="resultsTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>企業名</th>
+            <th>代表者名</th>
+            <th>業種</th>
+            <th>従業員</th>
+            <th>メールアドレス</th>
+            <th>所在地</th>
+            <th>スコア</th>
+          </tr>
+        </thead>
+        <tbody id="resultsBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="footer-note">
+    このデモはWizBiz株式会社向けにAccelShiftが作成したものです。データはサンプルです。
+  </div>
+</div>
+
+<script>
+  const MOCK_DATA = [
+    { company: '株式会社山田製作所', rep: '山田 太郎', industry: '製造業', employees: '120名', email: 'tokyo@yamada-seisakusho.co.jp', location: '東京都墨田区', score: 92 },
+    { company: '田中工業株式会社', rep: '田中 一郎', industry: '製造業', employees: '85名', email: 'info@tanaka-kogyo.co.jp', location: '東京都大田区', score: 88 },
+    { company: '鈴木精密工業株式会社', rep: '鈴木 次郎', industry: '精密機器製造', employees: '200名', email: 'contact@suzuki-seimitsu.co.jp', location: '東京都品川区', score: 85 },
+    { company: '東京金属加工株式会社', rep: '佐藤 健一', industry: '金属加工', employees: '65名', email: 'sales@tokyo-kinzoku.co.jp', location: '東京都葛飾区', score: 81 },
+    { company: '日本機械製造株式会社', rep: '高橋 誠', industry: '機械製造', employees: '310名', email: 'info@nihon-kikai.co.jp', location: '東京都江東区', score: 79 },
+    { company: '丸山産業株式会社', rep: '丸山 浩一', industry: '産業機械', employees: '55名', email: 'contact@maruyama-sangyo.co.jp', location: '東京都荒川区', score: 76 },
+    { company: '富士精工株式会社', rep: '伊藤 明', industry: '精密加工', employees: '145名', email: 'info@fuji-seiko.co.jp', location: '東京都北区', score: 74 },
+    { company: '東邦金属株式会社', rep: '渡辺 剛', industry: '金属製品', employees: '78名', email: 'sales@toho-kinzoku.co.jp', location: '東京都足立区', score: 71 },
+  ];
+
+  let currentData = [];
+
+  function setQuery(q) {
+    document.getElementById('query').value = q;
+  }
+
+  function generateList() {
+    const query = document.getElementById('query').value.trim();
+    if (!query) {
+      document.getElementById('query').focus();
+      return;
+    }
+
+    document.getElementById('generateBtn').disabled = true;
+    document.getElementById('resultsCard').classList.remove('visible');
+    document.getElementById('loadingCard').classList.add('visible');
+
+    // Reset steps
+    ['step1','step2','step3','step4'].forEach(id => {
+      document.getElementById(id).className = 'loading-step';
+    });
+
+    // Animate steps
+    const steps = ['step1','step2','step3','step4'];
+    const delays = [400, 900, 1500, 2100];
+    steps.forEach((id, i) => {
+      setTimeout(() => {
+        if (i > 0) document.getElementById(steps[i-1]).className = 'loading-step done';
+        document.getElementById(id).className = 'loading-step active';
+      }, delays[i]);
+    });
+
+    // Show results after ~2.8s
+    setTimeout(() => {
+      document.getElementById(steps[steps.length-1]).className = 'loading-step done';
+      showResults(query);
+    }, 2800);
+  }
+
+  function showResults(query) {
+    // Shuffle slightly for demo effect
+    currentData = [...MOCK_DATA].sort(() => Math.random() * 0.4 - 0.2).slice(0, 8);
+
+    const tbody = document.getElementById('resultsBody');
+    tbody.innerHTML = '';
+    currentData.forEach((row, i) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="color:var(--gray-400);font-weight:600;">${String(i+1).padStart(2,'0')}</td>
+        <td style="font-weight:600;">${row.company}</td>
+        <td>${row.rep}</td>
+        <td><span class="tag">${row.industry}</span></td>
+        <td>${row.employees}</td>
+        <td style="color:var(--accent);font-size:12px;">${row.email}</td>
+        <td style="color:var(--gray-600);">${row.location}</td>
+        <td>
+          <div class="score-bar">
+            <div class="score-bg"><div class="score-fill" style="width:${row.score}%"></div></div>
+            <span style="font-size:12px;font-weight:700;color:var(--accent)">${row.score}</span>
+          </div>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    const now = new Date();
+    const timeStr = `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    document.getElementById('resultsTitle').textContent = `「${query}」の生成結果`;
+    document.getElementById('resultsMeta').textContent = `${currentData.length}件取得 ・ ${timeStr} 生成 ・ 生成時間: 2.8秒`;
+
+    document.getElementById('loadingCard').classList.remove('visible');
+    document.getElementById('resultsCard').classList.add('visible');
+    document.getElementById('generateBtn').disabled = false;
+
+    // Scroll to results
+    document.getElementById('resultsCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function downloadCSV() {
+    if (!currentData.length) return;
+    const headers = ['企業名', '代表者名', '業種', '従業員数', 'メールアドレス', '所在地', 'スコア'];
+    const rows = currentData.map(r => [r.company, r.rep, r.industry, r.employees, r.email, r.location, r.score]);
+    const csv = '\uFEFF' + [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    const q = document.getElementById('query').value.trim().slice(0, 20) || 'list';
+    a.download = `営業リスト_${q}_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+  }
+</script>
+</body>
+</html>
