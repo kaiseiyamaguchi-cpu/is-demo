@@ -16,12 +16,15 @@ const ANALYSIS_STEPS = [
 ];
 
 type ResultTab = "summary" | "issues" | "email" | "memo";
+type InputTab = "email" | "docs";
 
 export default function DemoPage() {
   const [phase, setPhase] = useState<Phase>("select");
   const [selectedCase, setSelectedCase] = useState<Case | null>(null);
   const [analysisStep, setAnalysisStep] = useState(0);
   const [activeTab, setActiveTab] = useState<ResultTab>("summary");
+  const [activeInputTab, setActiveInputTab] = useState<InputTab>("email");
+  const [activeDocIdx, setActiveDocIdx] = useState(0);
   const [emailCopied, setEmailCopied] = useState(false);
 
   const selectCase = useCallback((c: Case) => {
@@ -122,40 +125,99 @@ export default function DemoPage() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="max-w-2xl mx-auto"
+              className="max-w-3xl mx-auto"
             >
-              <div className="mb-6">
+              <div className="mb-5 flex items-center gap-3">
                 <span className={`inline-flex text-xs font-semibold px-2.5 py-1 rounded-full ${selectedCase.badgeColor}`}>
                   {selectedCase.label}
                 </span>
-              </div>
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mb-6">
-                <div className="bg-gray-50 border-b border-gray-200 px-5 py-3">
-                  <h2 className="text-sm font-semibold text-gray-700">受信メール</h2>
-                </div>
-                <div className="p-5">
-                  <div className="space-y-2 mb-4 text-sm text-gray-600">
-                    <div><span className="font-medium text-gray-800 w-16 inline-block">差出人:</span> {selectedCase.inputEmail.from}</div>
-                    <div><span className="font-medium text-gray-800 w-16 inline-block">件名:</span> {selectedCase.inputEmail.subject}</div>
-                  </div>
-                  <div className="border-t border-gray-100 pt-4">
-                    <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans leading-relaxed">
-                      {selectedCase.inputEmail.body}
-                    </pre>
-                  </div>
-                </div>
+                <span className="text-gray-400 text-sm">添付書類 {selectedCase.rawDocuments.length}件</span>
               </div>
 
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 mb-6">
-                <h3 className="text-sm font-semibold text-gray-700 mb-3">添付書類</h3>
-                <div className="flex flex-wrap gap-2">
-                  {selectedCase.inputEmail.attachments.map((att, i) => (
-                    <span key={i} className="flex items-center gap-1.5 bg-blue-50 text-blue-700 text-xs font-medium px-3 py-1.5 rounded-lg border border-blue-100">
-                      📄 {att}
-                    </span>
-                  ))}
-                </div>
+              {/* Input Tabs */}
+              <div className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-5 w-fit">
+                {([
+                  { id: "email" as InputTab, label: "📧 受信メール" },
+                  { id: "docs" as InputTab, label: `📄 添付書類 (${selectedCase.rawDocuments.length})` },
+                ]).map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveInputTab(tab.id)}
+                    className={`text-sm font-medium px-4 py-2 rounded-lg transition-all ${
+                      activeInputTab === tab.id
+                        ? "bg-white text-gray-900 shadow-sm"
+                        : "text-gray-500 hover:text-gray-700"
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
               </div>
+
+              <AnimatePresence mode="wait">
+                {activeInputTab === "email" && (
+                  <motion.div key="email-tab" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mb-5">
+                      <div className="bg-gray-50 border-b border-gray-200 px-5 py-3">
+                        <h2 className="text-sm font-semibold text-gray-700">受信メール</h2>
+                      </div>
+                      <div className="p-5">
+                        <div className="space-y-2 mb-4 text-sm text-gray-600">
+                          <div className="flex gap-3">
+                            <span className="font-medium text-gray-500 w-14 flex-shrink-0">差出人:</span>
+                            <span className="text-gray-800">{selectedCase.inputEmail.from}</span>
+                          </div>
+                          <div className="flex gap-3">
+                            <span className="font-medium text-gray-500 w-14 flex-shrink-0">件名:</span>
+                            <span className="text-gray-800 font-medium">{selectedCase.inputEmail.subject}</span>
+                          </div>
+                        </div>
+                        <div className="border-t border-gray-100 pt-4">
+                          <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans leading-relaxed">
+                            {selectedCase.inputEmail.body}
+                          </pre>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {activeInputTab === "docs" && (
+                  <motion.div key="docs-tab" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                    {/* Doc selector */}
+                    <div className="flex gap-2 mb-4 flex-wrap">
+                      {selectedCase.rawDocuments.map((doc, i) => (
+                        <button
+                          key={i}
+                          onClick={() => setActiveDocIdx(i)}
+                          className={`text-xs font-medium px-3 py-1.5 rounded-lg border transition-all ${
+                            activeDocIdx === i
+                              ? "bg-slate-900 text-white border-slate-900"
+                              : "bg-white text-gray-600 border-gray-200 hover:border-slate-400"
+                          }`}
+                        >
+                          📄 {doc.type} #{doc.docNumber}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mb-5">
+                      <div className="bg-gray-50 border-b border-gray-200 px-5 py-3 flex items-center gap-3">
+                        <span className="text-sm font-semibold text-gray-700">
+                          {selectedCase.rawDocuments[activeDocIdx]?.type}
+                        </span>
+                        <span className="text-xs text-gray-400 font-mono">
+                          #{selectedCase.rawDocuments[activeDocIdx]?.docNumber}
+                        </span>
+                      </div>
+                      <div className="p-5 overflow-x-auto">
+                        <pre className="text-xs text-gray-800 whitespace-pre font-mono leading-relaxed">
+                          {selectedCase.rawDocuments[activeDocIdx]?.content}
+                        </pre>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               <motion.button
                 onClick={startAnalysis}
